@@ -1,33 +1,249 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
-    <title>Valparaíso Cultural Map (OpenLayers)</title>
     <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>Valpo Spot — Bars, Restaurants & Galleries</title>
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v8.2.0/ol.css">
-    
     <style>
-        /* Set the map container to fill the screen */
-        #map {
-            height: 100vh;
-            width: 100%;
+        :root {
+            color-scheme: light;
+            --ink: #0f172a;
+            --muted: #5b6473;
+            --brand: #e94f37;
+            --brand-dark: #c33722;
+            --surface: #f8f6f2;
+            --card: #ffffff;
+            --shadow: 0 18px 45px rgba(15, 23, 42, 0.12);
         }
-        
-        /* Basic styling for the popup */
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            margin: 0;
+            font-family: "Inter", "Segoe UI", system-ui, -apple-system, sans-serif;
+            background: var(--surface);
+            color: var(--ink);
+        }
+
+        header {
+            padding: 28px 36px 0;
+        }
+
+        .topbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 20px;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 14px;
+        }
+
+        .brand-badge {
+            width: 44px;
+            height: 44px;
+            border-radius: 14px;
+            background: linear-gradient(140deg, var(--brand), #f6a14b);
+            display: grid;
+            place-items: center;
+            color: white;
+            font-weight: 700;
+            font-size: 1.1rem;
+            box-shadow: 0 12px 30px rgba(233, 79, 55, 0.35);
+        }
+
+        .brand h1 {
+            margin: 0;
+            font-size: 1.6rem;
+            letter-spacing: -0.02em;
+        }
+
+        .brand p {
+            margin: 4px 0 0;
+            color: var(--muted);
+            font-size: 0.95rem;
+        }
+
+        .cta {
+            background: var(--ink);
+            color: white;
+            padding: 10px 18px;
+            border-radius: 999px;
+            font-weight: 600;
+            text-decoration: none;
+            font-size: 0.95rem;
+        }
+
+        main {
+            display: grid;
+            grid-template-columns: minmax(320px, 420px) 1fr;
+            gap: 24px;
+            padding: 24px 36px 40px;
+            min-height: calc(100vh - 140px);
+        }
+
+        .panel {
+            background: var(--card);
+            border-radius: 24px;
+            padding: 22px;
+            box-shadow: var(--shadow);
+            display: flex;
+            flex-direction: column;
+            gap: 18px;
+        }
+
+        .stats {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 12px;
+        }
+
+        .stat {
+            background: #fdf0e9;
+            border-radius: 16px;
+            padding: 12px;
+        }
+
+        .stat strong {
+            font-size: 1.2rem;
+            display: block;
+        }
+
+        .stat span {
+            color: var(--muted);
+            font-size: 0.85rem;
+        }
+
+        .search {
+            display: flex;
+            gap: 10px;
+        }
+
+        .search input {
+            flex: 1;
+            border: 1px solid #e5e7eb;
+            border-radius: 14px;
+            padding: 10px 14px;
+            font-size: 0.95rem;
+        }
+
+        .filters {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .filter-btn {
+            border: 1px solid #e5e7eb;
+            background: white;
+            color: var(--muted);
+            padding: 6px 12px;
+            border-radius: 999px;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s ease;
+        }
+
+        .filter-btn.active {
+            background: var(--ink);
+            color: white;
+            border-color: var(--ink);
+        }
+
+        .list {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            overflow-y: auto;
+            padding-right: 4px;
+            max-height: 62vh;
+        }
+
+        .card {
+            background: white;
+            border-radius: 18px;
+            padding: 14px;
+            border: 1px solid #eef0f4;
+            cursor: pointer;
+            transition: transform 0.2s ease, box-shadow 0.2s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 15px 25px rgba(15, 23, 42, 0.12);
+        }
+
+        .card-header {
+            display: flex;
+            justify-content: space-between;
+            gap: 8px;
+            align-items: center;
+        }
+
+        .card h3 {
+            margin: 0;
+            font-size: 1rem;
+        }
+
+        .tag {
+            padding: 4px 10px;
+            border-radius: 999px;
+            font-size: 0.7rem;
+            font-weight: 700;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
+        }
+
+        .tag.bar {
+            background: #fef3c7;
+            color: #92400e;
+        }
+
+        .tag.restaurant {
+            background: #dbeafe;
+            color: #1e3a8a;
+        }
+
+        .tag.gallery {
+            background: #ede9fe;
+            color: #5b21b6;
+        }
+
+        .meta {
+            margin: 8px 0 0;
+            color: var(--muted);
+            font-size: 0.85rem;
+            line-height: 1.4;
+        }
+
+        #map {
+            height: 100%;
+            min-height: 600px;
+            border-radius: 24px;
+            overflow: hidden;
+            box-shadow: var(--shadow);
+        }
+
         .ol-popup {
             position: absolute;
             background-color: white;
-            padding: 15px;
-            border-radius: 10px;
-            border: 1px solid #cccccc;
+            padding: 12px;
+            border-radius: 12px;
+            border: 1px solid #e5e7eb;
             bottom: 12px;
             left: -50px;
-            min-width: 200px;
-            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+            min-width: 220px;
+            box-shadow: 0 12px 28px rgba(15, 23, 42, 0.12);
         }
-        
-        .ol-popup:after, .ol-popup:before {
+
+        .ol-popup:after,
+        .ol-popup:before {
             top: 100%;
             border: solid transparent;
             content: " ";
@@ -36,21 +252,21 @@
             position: absolute;
             pointer-events: none;
         }
-        
+
         .ol-popup:after {
             border-top-color: white;
             border-width: 10px;
             left: 48px;
             margin-left: -10px;
         }
-        
+
         .ol-popup:before {
-            border-top-color: #cccccc;
+            border-top-color: #e5e7eb;
             border-width: 11px;
             left: 48px;
             margin-left: -11px;
         }
-        
+
         .ol-popup-closer {
             text-decoration: none;
             position: absolute;
@@ -58,25 +274,89 @@
             right: 8px;
             color: #333;
         }
-        
+
         .ol-popup-closer:after {
             content: "✖";
         }
 
         .popup-content h4 {
-            margin-top: 0;
-            margin-bottom: 5px;
-            color: #34495e; /* Dark Blue/Gray */
+            margin: 0 0 6px;
+            color: var(--ink);
         }
+
         .popup-content p {
-            margin: 3px 0;
-            font-size: 0.9em;
+            margin: 4px 0;
+            font-size: 0.85rem;
+            color: var(--muted);
+        }
+
+        @media (max-width: 980px) {
+            header {
+                padding: 20px 20px 0;
+            }
+
+            main {
+                grid-template-columns: 1fr;
+                padding: 20px;
+            }
+
+            #map {
+                min-height: 420px;
+            }
+
+            .list {
+                max-height: none;
+            }
         }
     </style>
 </head>
 <body>
+    <header>
+        <div class="topbar">
+            <div class="brand">
+                <div class="brand-badge">V</div>
+                <div>
+                    <h1>Valpo Spot</h1>
+                    <p>A Foursquare-inspired guide to bars, restaurants & galleries in Valparaíso.</p>
+                </div>
+            </div>
+            <a class="cta" href="#map">Open Map</a>
+        </div>
+    </header>
 
-    <div id="map"></div>
+    <main>
+        <section class="panel">
+            <div class="stats">
+                <div class="stat">
+                    <strong id="total-count">0</strong>
+                    <span>Places curated</span>
+                </div>
+                <div class="stat">
+                    <strong id="bar-count">0</strong>
+                    <span>Bars & cafés</span>
+                </div>
+                <div class="stat">
+                    <strong id="gallery-count">0</strong>
+                    <span>Galleries & art spaces</span>
+                </div>
+            </div>
+
+            <div class="search">
+                <input id="search-input" type="search" placeholder="Search for a venue, address, or neighborhood">
+            </div>
+
+            <div class="filters" id="filters">
+                <button class="filter-btn active" data-filter="all">All</button>
+                <button class="filter-btn" data-filter="bar">Bars & Cafés</button>
+                <button class="filter-btn" data-filter="restaurant">Restaurants</button>
+                <button class="filter-btn" data-filter="gallery">Galleries</button>
+            </div>
+
+            <div class="list" id="list"></div>
+        </section>
+
+        <section id="map" aria-label="Map of Valparaíso"></section>
+    </main>
 
     <div id="popup" class="ol-popup">
         <a href="#" id="popup-closer" class="ol-popup-closer"></a>
@@ -84,135 +364,306 @@
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/ol@v8.2.0/dist/ol.js"></script>
-    
     <script>
-        // 1. DATA
         const places = [
-            [-33.0410, -71.6270, "Corazón Continto", "@corazoncontinto.cl", "Pilcomayo 517, Cerro Alegre", "+56 9 7256 9081"],
-            [-33.0375, -71.6275, "Vinilo Café", "@vinilocafe", "Almirante Montt 448, Cerro Alegre", "+56 32 215 5074"],
-            [-33.0370, -71.6300, "Lemutt Bar", "@lemuttbar", "Gálvez 233, Cerro Concepción", "+56 9 8452 7998"],
-            [-33.0380, -71.6285, "Casa Alegre", "@casalegrevalparaiso", "Paseo Dimalow 249, Cerro Alegre", "+56 9 8243 4567"],
-            [-33.0400, -71.6280, "El Terrat", "@terratvalpo", "Paseo Dimalow 263, Cerro Alegre", "+56 9 5017 4867"],
-            [-33.0405, -71.6275, "Malizioso Pizzería", "@malizioso.pizzeria", "Almirante Montt 532, Cerro Concepción", "+56 9 6858 3587"],
-            [-33.0415, -71.6265, "Medialuna Valpo", "@medialunavalpo", "Pilcomayo 581, Cerro Alegre", "+56 32 344 6702"],
-            [-33.0400, -71.6270, "Galería Bahía Utópica", "@galeriabahiautopica", "Almirante Montt 372, Cerro Concepción", "+56 9 5352 6979"],
-            [-33.0403, -71.6268, "Sala Galia", "@sala_galia", "Galos 685, Cerro Concepción", "No public phone"],
-            [-33.0395, -71.6288, "Fauna Hotel & Rte.", "@faunahotelrestaurante", "Paseo Dimalow 166, Cerro Alegre", "+56 32 327 3485"],
-            [-33.0378, -71.6282, "Alma Mía Valparaíso", "@almamiavalparaiso", "Almirante Montt 402, Cerro Alegre", "+56 32 238 6077"],
-            [-33.0383, -71.6290, "Entre Cerros Café", "@entrecerrosvalparaiso", "Almirante Montt 399, Cerro Alegre", "+56 9 8734 6835"],
-            [-33.0388, -71.6310, "SEPTIMA Pastelería", "@septima.pasteleria", "Concepción 213, Cerro Concepción", "+56 32 318 4038"],
-            [-33.0393, -71.6295, "Fat Kid", "@fatkidburgers", "Lautaro Rosas 450, Cerro Alegre", "+56 9 7462 8769"],
-            [-33.0398, -71.6298, "Momo", "@momovalparaiso", "Almirante Montt 427, Cerro Alegre", "+56 9 8225 6173"]
+            {
+                lat: -33.0410,
+                lon: -71.6270,
+                name: "Corazón Continto",
+                instagram: "@corazoncontinto.cl",
+                address: "Pilcomayo 517, Cerro Alegre",
+                phone: "+56 9 7256 9081",
+                category: "bar"
+            },
+            {
+                lat: -33.0375,
+                lon: -71.6275,
+                name: "Vinilo Café",
+                instagram: "@vinilocafe",
+                address: "Almirante Montt 448, Cerro Alegre",
+                phone: "+56 32 215 5074",
+                category: "bar"
+            },
+            {
+                lat: -33.0370,
+                lon: -71.6300,
+                name: "Lemutt Bar",
+                instagram: "@lemuttbar",
+                address: "Gálvez 233, Cerro Concepción",
+                phone: "+56 9 8452 7998",
+                category: "bar"
+            },
+            {
+                lat: -33.0380,
+                lon: -71.6285,
+                name: "Casa Alegre",
+                instagram: "@casalegrevalparaiso",
+                address: "Paseo Dimalow 249, Cerro Alegre",
+                phone: "+56 9 8243 4567",
+                category: "restaurant"
+            },
+            {
+                lat: -33.0400,
+                lon: -71.6280,
+                name: "El Terrat",
+                instagram: "@terratvalpo",
+                address: "Paseo Dimalow 263, Cerro Alegre",
+                phone: "+56 9 5017 4867",
+                category: "restaurant"
+            },
+            {
+                lat: -33.0405,
+                lon: -71.6275,
+                name: "Malizioso Pizzería",
+                instagram: "@malizioso.pizzeria",
+                address: "Almirante Montt 532, Cerro Concepción",
+                phone: "+56 9 6858 3587",
+                category: "restaurant"
+            },
+            {
+                lat: -33.0415,
+                lon: -71.6265,
+                name: "Medialuna Valpo",
+                instagram: "@medialunavalpo",
+                address: "Pilcomayo 581, Cerro Alegre",
+                phone: "+56 32 344 6702",
+                category: "bar"
+            },
+            {
+                lat: -33.0400,
+                lon: -71.6270,
+                name: "Galería Bahía Utópica",
+                instagram: "@galeriabahiautopica",
+                address: "Almirante Montt 372, Cerro Concepción",
+                phone: "+56 9 5352 6979",
+                category: "gallery"
+            },
+            {
+                lat: -33.0403,
+                lon: -71.6268,
+                name: "Sala Galia",
+                instagram: "@sala_galia",
+                address: "Galos 685, Cerro Concepción",
+                phone: "No public phone",
+                category: "gallery"
+            },
+            {
+                lat: -33.0395,
+                lon: -71.6288,
+                name: "Fauna Hotel & Rte.",
+                instagram: "@faunahotelrestaurante",
+                address: "Paseo Dimalow 166, Cerro Alegre",
+                phone: "+56 32 327 3485",
+                category: "restaurant"
+            },
+            {
+                lat: -33.0378,
+                lon: -71.6282,
+                name: "Alma Mía Valparaíso",
+                instagram: "@almamiavalparaiso",
+                address: "Almirante Montt 402, Cerro Alegre",
+                phone: "+56 32 238 6077",
+                category: "restaurant"
+            },
+            {
+                lat: -33.0383,
+                lon: -71.6290,
+                name: "Entre Cerros Café",
+                instagram: "@entrecerrosvalparaiso",
+                address: "Almirante Montt 399, Cerro Alegre",
+                phone: "+56 9 8734 6835",
+                category: "bar"
+            },
+            {
+                lat: -33.0388,
+                lon: -71.6310,
+                name: "SEPTIMA Pastelería",
+                instagram: "@septima.pasteleria",
+                address: "Concepción 213, Cerro Concepción",
+                phone: "+56 32 318 4038",
+                category: "restaurant"
+            },
+            {
+                lat: -33.0393,
+                lon: -71.6295,
+                name: "Fat Kid",
+                instagram: "@fatkidburgers",
+                address: "Lautaro Rosas 450, Cerro Alegre",
+                phone: "+56 9 7462 8769",
+                category: "restaurant"
+            },
+            {
+                lat: -33.0398,
+                lon: -71.6298,
+                name: "Momo",
+                instagram: "@momovalparaiso",
+                address: "Almirante Montt 427, Cerro Alegre",
+                phone: "+56 9 8225 6173",
+                category: "restaurant"
+            }
         ];
 
-        // 2. CREATE FEATURES (Markers)
-        const features = places.map(place => {
-            const lat = place[0];
-            const lon = place[1];
-            const name = place[2];
-            const instagram = place[3];
-            const address = place[4];
-            const phone = place[5];
-
-            // Convert Lat/Lon to the map's default projection (Web Mercator)
-            const coords = ol.proj.fromLonLat([lon, lat]);
-            
-            const feature = new ol.Feature({
-                geometry: new ol.geom.Point(coords),
-                name: name,
-                instagram: instagram,
-                address: address,
-                phone: phone
-            });
-
-            // Optional: Apply a style to the marker
-            feature.setStyle(new ol.style.Style({
-                image: new ol.style.Circle({
-                    radius: 7,
-                    fill: new ol.style.Fill({ color: '#c0392b' }), // Red
-                    stroke: new ol.style.Stroke({ color: '#fff', width: 2 })
-                })
-            }));
-
-            return feature;
-        });
-
-        // 3. CREATE VECTOR LAYER
-        const vectorSource = new ol.source.Vector({
-            features: features
-        });
-
-        const vectorLayer = new ol.layer.Vector({
-            source: vectorSource,
-            // Title for the layer list (if you add one later)
-            title: 'Cultural Places' 
-        });
-
-        // 4. POPUP OVERLAY SETUP
-        const container = document.getElementById('popup');
-        const content = document.getElementById('popup-content');
-        const closer = document.getElementById('popup-closer');
-
-        const overlay = new ol.Overlay({
-            element: container,
-            autoPan: {
-                animation: {
-                    duration: 250,
-                },
-            },
-        });
-
-        closer.onclick = function () {
-            overlay.setPosition(undefined);
-            closer.blur();
-            return false;
+        const categoryColors = {
+            bar: "#f59e0b",
+            restaurant: "#2563eb",
+            gallery: "#7c3aed"
         };
 
-        // 5. MAP INITIALIZATION
+        const listElement = document.getElementById("list");
+        const searchInput = document.getElementById("search-input");
+        const filterButtons = document.querySelectorAll(".filter-btn");
+        const totalCount = document.getElementById("total-count");
+        const barCount = document.getElementById("bar-count");
+        const galleryCount = document.getElementById("gallery-count");
+
+        const vectorSource = new ol.source.Vector();
+        const vectorLayer = new ol.layer.Vector({
+            source: vectorSource
+        });
+
+        const overlay = new ol.Overlay({
+            element: document.getElementById("popup"),
+            autoPan: { animation: { duration: 250 } }
+        });
+
         const map = new ol.Map({
-            target: 'map',
+            target: "map",
             layers: [
-                new ol.layer.Tile({
-                    source: new ol.source.OSM() // Use OpenStreetMap as the base layer
-                }),
-                vectorLayer // Add the layer with your cultural points
+                new ol.layer.Tile({ source: new ol.source.OSM() }),
+                vectorLayer
             ],
             overlays: [overlay],
             view: new ol.View({
-                // Center the map on Valparaíso, Cerro Alegre/Concepción area
-                center: ol.proj.fromLonLat([-71.6285, -33.0395]), 
-                zoom: 16 // Set an appropriate zoom level
+                center: ol.proj.fromLonLat([-71.6285, -33.0395]),
+                zoom: 16
             })
         });
 
-        // 6. MAP INTERACTION (Click Listener for Popups)
-        map.on('singleclick', function (event) {
-            const feature = map.forEachFeatureAtPixel(event.pixel, function (feature) {
-                return feature;
+        const popupContent = document.getElementById("popup-content");
+        const popupCloser = document.getElementById("popup-closer");
+
+        popupCloser.onclick = () => {
+            overlay.setPosition(undefined);
+            popupCloser.blur();
+            return false;
+        };
+
+        const buildFeature = (place) => {
+            const feature = new ol.Feature({
+                geometry: new ol.geom.Point(ol.proj.fromLonLat([place.lon, place.lat])),
+                place
             });
 
-            if (feature) {
-                const geometry = feature.getGeometry();
-                const coordinate = geometry.getCoordinates();
+            feature.setStyle(
+                new ol.style.Style({
+                    image: new ol.style.Circle({
+                        radius: 7,
+                        fill: new ol.style.Fill({ color: categoryColors[place.category] }),
+                        stroke: new ol.style.Stroke({ color: "#ffffff", width: 2 })
+                    })
+                })
+            );
 
-                // Build the HTML content for the popup
-                content.innerHTML = `
-                    <div class="popup-content">
-                        <h4>${feature.get('name')}</h4>
-                        <p><strong>Address:</strong> ${feature.get('address')}</p>
-                        <p><strong>Instagram:</strong> <a href="https://www.instagram.com/${feature.get('instagram').substring(1)}" target="_blank">${feature.get('instagram')}</a></p>
-                        <p><strong>Phone:</strong> ${feature.get('phone')}</p>
+            return feature;
+        };
+
+        const placeFeatures = new Map();
+        places.forEach((place) => {
+            const feature = buildFeature(place);
+            placeFeatures.set(place.name, feature);
+            vectorSource.addFeature(feature);
+        });
+
+        const renderList = (filtered) => {
+            listElement.innerHTML = "";
+            if (!filtered.length) {
+                listElement.innerHTML = "<p class=\"meta\">No venues match your search. Try a new keyword.</p>";
+                return;
+            }
+
+            filtered.forEach((place) => {
+                const card = document.createElement("div");
+                card.className = "card";
+                card.innerHTML = `
+                    <div class="card-header">
+                        <h3>${place.name}</h3>
+                        <span class="tag ${place.category}">${place.category}</span>
                     </div>
+                    <p class="meta">${place.address}</p>
+                    <p class="meta">Instagram: ${place.instagram} · ${place.phone}</p>
                 `;
-                
-                // Position the popup and display it
-                overlay.setPosition(coordinate);
+
+                card.addEventListener("click", () => {
+                    const feature = placeFeatures.get(place.name);
+                    const coordinate = feature.getGeometry().getCoordinates();
+                    const view = map.getView();
+                    view.animate({ center: coordinate, duration: 600, zoom: 17 });
+                    showPopup(place, coordinate);
+                });
+
+                listElement.appendChild(card);
+            });
+        };
+
+        const showPopup = (place, coordinate) => {
+            popupContent.innerHTML = `
+                <div class="popup-content">
+                    <h4>${place.name}</h4>
+                    <p><strong>Category:</strong> ${place.category}</p>
+                    <p><strong>Address:</strong> ${place.address}</p>
+                    <p><strong>Instagram:</strong> <a href="https://www.instagram.com/${place.instagram.substring(1)}" target="_blank" rel="noopener noreferrer">${place.instagram}</a></p>
+                    <p><strong>Phone:</strong> ${place.phone}</p>
+                </div>
+            `;
+            overlay.setPosition(coordinate);
+        };
+
+        const applyFilters = () => {
+            const term = searchInput.value.trim().toLowerCase();
+            const activeFilter = document.querySelector(".filter-btn.active").dataset.filter;
+
+            const filtered = places.filter((place) => {
+                const matchesFilter = activeFilter === "all" || place.category === activeFilter;
+                const matchesSearch =
+                    place.name.toLowerCase().includes(term) ||
+                    place.address.toLowerCase().includes(term) ||
+                    place.instagram.toLowerCase().includes(term);
+                return matchesFilter && matchesSearch;
+            });
+
+            vectorSource.clear();
+            filtered.forEach((place) => vectorSource.addFeature(placeFeatures.get(place.name)));
+            renderList(filtered);
+        };
+
+        filterButtons.forEach((button) => {
+            button.addEventListener("click", () => {
+                filterButtons.forEach((btn) => btn.classList.remove("active"));
+                button.classList.add("active");
+                applyFilters();
+            });
+        });
+
+        searchInput.addEventListener("input", applyFilters);
+
+        map.on("singleclick", (event) => {
+            const feature = map.forEachFeatureAtPixel(event.pixel, (feature) => feature);
+            if (feature) {
+                const { place } = feature.getProperties();
+                showPopup(place, feature.getGeometry().getCoordinates());
             } else {
-                // If no feature is clicked, close any open popup
                 overlay.setPosition(undefined);
             }
         });
 
+        const updateCounts = () => {
+            totalCount.textContent = places.length;
+            barCount.textContent = places.filter((place) => place.category === "bar").length;
+            galleryCount.textContent = places.filter((place) => place.category === "gallery").length;
+        };
+
+        updateCounts();
+        renderList(places);
     </script>
 </body>
 </html>
