@@ -1,0 +1,218 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Valparaíso Cultural Map (OpenLayers)</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/ol@v8.2.0/ol.css">
+    
+    <style>
+        /* Set the map container to fill the screen */
+        #map {
+            height: 100vh;
+            width: 100%;
+        }
+        
+        /* Basic styling for the popup */
+        .ol-popup {
+            position: absolute;
+            background-color: white;
+            padding: 15px;
+            border-radius: 10px;
+            border: 1px solid #cccccc;
+            bottom: 12px;
+            left: -50px;
+            min-width: 200px;
+            box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+        }
+        
+        .ol-popup:after, .ol-popup:before {
+            top: 100%;
+            border: solid transparent;
+            content: " ";
+            height: 0;
+            width: 0;
+            position: absolute;
+            pointer-events: none;
+        }
+        
+        .ol-popup:after {
+            border-top-color: white;
+            border-width: 10px;
+            left: 48px;
+            margin-left: -10px;
+        }
+        
+        .ol-popup:before {
+            border-top-color: #cccccc;
+            border-width: 11px;
+            left: 48px;
+            margin-left: -11px;
+        }
+        
+        .ol-popup-closer {
+            text-decoration: none;
+            position: absolute;
+            top: 2px;
+            right: 8px;
+            color: #333;
+        }
+        
+        .ol-popup-closer:after {
+            content: "✖";
+        }
+
+        .popup-content h4 {
+            margin-top: 0;
+            margin-bottom: 5px;
+            color: #34495e; /* Dark Blue/Gray */
+        }
+        .popup-content p {
+            margin: 3px 0;
+            font-size: 0.9em;
+        }
+    </style>
+</head>
+<body>
+
+    <div id="map"></div>
+
+    <div id="popup" class="ol-popup">
+        <a href="#" id="popup-closer" class="ol-popup-closer"></a>
+        <div id="popup-content"></div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/ol@v8.2.0/dist/ol.js"></script>
+    
+    <script>
+        // 1. DATA
+        const places = [
+            [-33.0410, -71.6270, "Corazón Continto", "@corazoncontinto.cl", "Pilcomayo 517, Cerro Alegre", "+56 9 7256 9081"],
+            [-33.0375, -71.6275, "Vinilo Café", "@vinilocafe", "Almirante Montt 448, Cerro Alegre", "+56 32 215 5074"],
+            [-33.0370, -71.6300, "Lemutt Bar", "@lemuttbar", "Gálvez 233, Cerro Concepción", "+56 9 8452 7998"],
+            [-33.0380, -71.6285, "Casa Alegre", "@casalegrevalparaiso", "Paseo Dimalow 249, Cerro Alegre", "+56 9 8243 4567"],
+            [-33.0400, -71.6280, "El Terrat", "@terratvalpo", "Paseo Dimalow 263, Cerro Alegre", "+56 9 5017 4867"],
+            [-33.0405, -71.6275, "Malizioso Pizzería", "@malizioso.pizzeria", "Almirante Montt 532, Cerro Concepción", "+56 9 6858 3587"],
+            [-33.0415, -71.6265, "Medialuna Valpo", "@medialunavalpo", "Pilcomayo 581, Cerro Alegre", "+56 32 344 6702"],
+            [-33.0400, -71.6270, "Galería Bahía Utópica", "@galeriabahiautopica", "Almirante Montt 372, Cerro Concepción", "+56 9 5352 6979"],
+            [-33.0403, -71.6268, "Sala Galia", "@sala_galia", "Galos 685, Cerro Concepción", "No public phone"],
+            [-33.0395, -71.6288, "Fauna Hotel & Rte.", "@faunahotelrestaurante", "Paseo Dimalow 166, Cerro Alegre", "+56 32 327 3485"],
+            [-33.0378, -71.6282, "Alma Mía Valparaíso", "@almamiavalparaiso", "Almirante Montt 402, Cerro Alegre", "+56 32 238 6077"],
+            [-33.0383, -71.6290, "Entre Cerros Café", "@entrecerrosvalparaiso", "Almirante Montt 399, Cerro Alegre", "+56 9 8734 6835"],
+            [-33.0388, -71.6310, "SEPTIMA Pastelería", "@septima.pasteleria", "Concepción 213, Cerro Concepción", "+56 32 318 4038"],
+            [-33.0393, -71.6295, "Fat Kid", "@fatkidburgers", "Lautaro Rosas 450, Cerro Alegre", "+56 9 7462 8769"],
+            [-33.0398, -71.6298, "Momo", "@momovalparaiso", "Almirante Montt 427, Cerro Alegre", "+56 9 8225 6173"]
+        ];
+
+        // 2. CREATE FEATURES (Markers)
+        const features = places.map(place => {
+            const lat = place[0];
+            const lon = place[1];
+            const name = place[2];
+            const instagram = place[3];
+            const address = place[4];
+            const phone = place[5];
+
+            // Convert Lat/Lon to the map's default projection (Web Mercator)
+            const coords = ol.proj.fromLonLat([lon, lat]);
+            
+            const feature = new ol.Feature({
+                geometry: new ol.geom.Point(coords),
+                name: name,
+                instagram: instagram,
+                address: address,
+                phone: phone
+            });
+
+            // Optional: Apply a style to the marker
+            feature.setStyle(new ol.style.Style({
+                image: new ol.style.Circle({
+                    radius: 7,
+                    fill: new ol.style.Fill({ color: '#c0392b' }), // Red
+                    stroke: new ol.style.Stroke({ color: '#fff', width: 2 })
+                })
+            }));
+
+            return feature;
+        });
+
+        // 3. CREATE VECTOR LAYER
+        const vectorSource = new ol.source.Vector({
+            features: features
+        });
+
+        const vectorLayer = new ol.layer.Vector({
+            source: vectorSource,
+            // Title for the layer list (if you add one later)
+            title: 'Cultural Places' 
+        });
+
+        // 4. POPUP OVERLAY SETUP
+        const container = document.getElementById('popup');
+        const content = document.getElementById('popup-content');
+        const closer = document.getElementById('popup-closer');
+
+        const overlay = new ol.Overlay({
+            element: container,
+            autoPan: {
+                animation: {
+                    duration: 250,
+                },
+            },
+        });
+
+        closer.onclick = function () {
+            overlay.setPosition(undefined);
+            closer.blur();
+            return false;
+        };
+
+        // 5. MAP INITIALIZATION
+        const map = new ol.Map({
+            target: 'map',
+            layers: [
+                new ol.layer.Tile({
+                    source: new ol.source.OSM() // Use OpenStreetMap as the base layer
+                }),
+                vectorLayer // Add the layer with your cultural points
+            ],
+            overlays: [overlay],
+            view: new ol.View({
+                // Center the map on Valparaíso, Cerro Alegre/Concepción area
+                center: ol.proj.fromLonLat([-71.6285, -33.0395]), 
+                zoom: 16 // Set an appropriate zoom level
+            })
+        });
+
+        // 6. MAP INTERACTION (Click Listener for Popups)
+        map.on('singleclick', function (event) {
+            const feature = map.forEachFeatureAtPixel(event.pixel, function (feature) {
+                return feature;
+            });
+
+            if (feature) {
+                const geometry = feature.getGeometry();
+                const coordinate = geometry.getCoordinates();
+
+                // Build the HTML content for the popup
+                content.innerHTML = `
+                    <div class="popup-content">
+                        <h4>${feature.get('name')}</h4>
+                        <p><strong>Address:</strong> ${feature.get('address')}</p>
+                        <p><strong>Instagram:</strong> <a href="https://www.instagram.com/${feature.get('instagram').substring(1)}" target="_blank">${feature.get('instagram')}</a></p>
+                        <p><strong>Phone:</strong> ${feature.get('phone')}</p>
+                    </div>
+                `;
+                
+                // Position the popup and display it
+                overlay.setPosition(coordinate);
+            } else {
+                // If no feature is clicked, close any open popup
+                overlay.setPosition(undefined);
+            }
+        });
+
+    </script>
+</body>
+</html>
